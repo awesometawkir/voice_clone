@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Clone Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        textarea,
+        select,
+        input[type="file"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .result p {
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .service-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .badge-free {
+            background: #4caf50;
+            color: white;
+        }
+
+        .badge-premium {
+            background: #ff9800;
+            color: white;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .info-box p {
+            color: #1976d2;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Voice Clone Service</h1>
+
+        <div class="card">
+            <h2>Text to Speech</h2>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('free')">
+                    <span class="service-badge badge-free">FREE</span> Free TTS
+                </button>
+                <button class="tab" onclick="switchTab('openai')">
+                    <span class="service-badge badge-premium">PREMIUM</span> OpenAI
+                </button>
+                <button class="tab" onclick="switchTab('openrouter')">
+                    <span class="service-badge badge-premium">PREMIUM</span> OpenRouter
+                </button>
+            </div>
+
+            <!-- Free TTS Tab -->
+            <div id="free-tab" class="tab-content active">
+                <div class="info-box">
+                    <p><strong>Free Voice Cloning</strong></p>
+                    <p>Uses Coqui TTS for voice cloning. Upload a voice sample or use default voice.</p>
+                    <p>Supports multiple languages!</p>
+                </div>
+
+                <form id="free-tts-form">
+                    <div class="form-group">
+                        <label for="free-text">Text to Convert:</label>
+                        <textarea id="free-text" placeholder="Enter the text you want to convert to speech..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="free-voice-id">🗣️ Select Voice (Free):</label>
+                        <select id="free-voice-id">
+                            <optgroup label="🇺🇸 English (US)">
+                                <option value="female_en">Female (Aria) - Natural</option>
+                                <option value="male_en">Male (Guy) - Natural</option>
+                            </optgroup>
+                            <optgroup label="🇬🇧 English (UK)">
+                                <option value="female_gb">Female (Sonia)</option>
+                                <option value="male_gb">Male (Ryan)</option>
+                            </optgroup>
+                            <optgroup label="🇪🇸 Spanish">
+                                <option value="female_es">Female (Elvira)</option>
+                                <option value="male_es">Male (Alvaro)</option>
+                            </optgroup>
+                            <optgroup label="🇫🇷 French">
+                                <option value="female_fr">Female (Denise)</option>
+                                <option value="male_fr">Male (Henri)</option>
+                            </optgroup>
+                            <optgroup label="🇩🇪 German">
+                                <option value="female_de">Female (Katja)</option>
+                                <option value="male_de">Male (Conrad)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- Hidden language field for compatibility if needed, though voice_id handles it -->
+                    <input type="hidden" id="free-language" value="en">
+
+                    <div class="form-group">
+                        <label for="free-voice-sample">Voice Sample (optional - for voice cloning):</label>
+                        <input type="file" id="free-voice-sample" accept="audio/*">
+                    </div>
+
+                    <button type="submit">Generate Speech (Free)</button>
+                </form>
+
+                <div class="loading" id="free-loading">
+                    <div class="spinner"></div>
+                    <p>Generating speech...</p>
+                </div>
+
+                <div class="error" id="free-error"></div>
+                <div class="result" id="free-result"></div>
+            </div>
+
+            <!-- OpenAI Tab -->
+            <div id="openai-tab" class="tab-content">
+                <div class="info-box">
+                    <p><strong>OpenAI Text-to-Speech</strong></p>
+                    <p>High-quality voices powered by OpenAI's TTS models.</p>
+                    <p>Get API key from: <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI API Keys</a></p>
+                </div>
+
+                <form id="openai-tts-form">
+                    <div class="form-group">
+                        <label for="openai-api-key">🔑 OpenAI API Key:</label>
+                        <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <input type="password" id="openai-api-key" placeholder="sk-proj-xxxxxxxxxxxxx" required style="flex: 1;">
+                            <button type="button" onclick="togglePasswordVisibility('openai-api-key')" style="padding: 12px 20px; background: #666;">👁️</button>
+                        </div>
+                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                            <button type="button" onclick="saveOpenAICredentials()" style="padding: 8px 15px; background: #4caf50;">💾 Save API Key</button>
+                            <button type="button" onclick="deleteOpenAICredentials()" style="padding: 8px 15px; background: #f44336;">🗑️ Delete Saved</button>
+                            <span id="openai-saved-status" style="padding: 8px; color: green; display: none;">✅ Saved</span>
+                        </div>
+                        <small style="color: #666; font-size: 12px;">Your API key is saved securely in your browser</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="openai-text">📝 Text to Convert:</label>
+                        <textarea id="openai-text" placeholder="Enter the text you want to convert to speech..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="openai-model">🤖 Model:</label>
+                        <select id="openai-model">
+                            <option value="tts-1">TTS-1 (Faster)</option>
+                            <option value="tts-1-hd">TTS-1-HD (Higher Quality)</option>
+                            <option value="gpt-4o-audio-preview">GPT-4o Audio Preview (Advanced)</option>
+                            <option value="gpt-4o-mini-audio-preview">GPT-4o Mini Audio Preview (Fast & Smart)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="openai-voice">🎤 Voice:</label>
+                        <select id="openai-voice">
+                            <option value="alloy">Alloy - Neutral</option>
+                            <option value="echo">Echo - Clear</option>
+                            <option value="fable">Fable - Warm</option>
+                            <option value="onyx">Onyx - Deep</option>
+                            <option value="nova">Nova - Energetic</option>
+                            <option value="shimmer">Shimmer - Soft</option>
+                            <option value="ash">Ash - Gentle</option>
+                            <option value="coral">Coral - Bright</option>
+                            <option value="sage">Sage - Calming</option>
+                        </select>
+                    </div>
+
+                    <button type="submit">🎵 Generate Speech (OpenAI)</button>
+                </form>
+
+                <div class="loading" id="openai-loading">
+                    <div class="spinner"></div>
+                    <p>Generating speech...</p>
+                </div>
+
+                <div class="error" id="openai-error"></div>
+                <div class="result" id="openai-result"></div>
+            </div>
+
+            <!-- OpenRouter Tab -->
+            <div id="openrouter-tab" class="tab-content">
+                <div class="info-box">
+                    <p><strong>OpenRouter Voice Cloning & TTS</strong></p>
+                    <p>Enter your API key and try different models!</p>
+                    <p>Get API key from: <a href="https://openrouter.ai/keys" target="_blank">OpenRouter Keys</a></p>
+                </div>
+
+                <form id="openrouter-tts-form">
+                    <div class="form-group">
+                        <label for="openrouter-api-key">🔑 OpenRouter API Key:</label>
+                        <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <input type="password" id="openrouter-api-key" placeholder="sk-or-v1-xxxxxxxxxxxxx" required style="flex: 1;">
+                            <button type="button" onclick="togglePasswordVisibility('openrouter-api-key')" style="padding: 12px 20px; background: #666;">👁️</button>
+                        </div>
+                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                            <button type="button" onclick="saveOpenRouterCredentials(true)" style="padding: 8px 15px; background: #4caf50;">💾 Save Credentials</button>
+                            <button type="button" onclick="deleteOpenRouterCredentials()" style="padding: 8px 15px; background: #f44336;">🗑️ Delete Saved</button>
+                            <span id="openrouter-saved-status" style="padding: 8px; color: green; display: none;">✅ Saved</span>
+                        </div>
+                        <small style="color: #666; font-size: 12px;">Your credentials are saved securely in your browser</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="openrouter-model">🤖 Model Name:</label>
+                        <input type="text" id="openrouter-model" list="model-list" placeholder="Select or type model name..." value="openai/tts-1" required>
+                        <datalist id="model-list">
+                            <option value="openai/tts-1">OpenAI TTS-1 (Standard)</option>
+                            <option value="openai/tts-1-hd">OpenAI TTS-1 HD (High Quality)</option>
+                            <option value="elevenlabs/eleven-multilingual-v2">ElevenLabs Multilingual v2</option>
+                            <option value="elevenlabs/eleven-turbo-v2">ElevenLabs Turbo v2</option>
+                            <option value="coqui/xtts-v2">Coqui XTTS v2</option>
+                            <option value="google/tts-1">Google TTS</option>
+                        </datalist>
+                        <small style="color: #666; font-size: 12px;">
+                            Select from list or type any custom model ID supported by OpenRouter.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="openrouter-text">📝 Text to Convert:</label>
+                        <textarea id="openrouter-text" placeholder="Enter the text you want to convert to speech..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="openrouter-voice">🎤 Voice Style:</label>
+                        <select id="openrouter-voice">
+                            <option value="alloy">Alloy - Neutral</option>
+                            <option value="echo">Echo - Clear</option>
+                            <option value="fable">Fable - Warm</option>
+                            <option value="onyx">Onyx - Deep</option>
+                            <option value="nova">Nova - Energetic</option>
+                            <option value="shimmer">Shimmer - Soft</option>
+                            <option value="custom">Custom Voice ID (if supported)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit">🎵 Generate Speech with OpenRouter</button>
+                </form>
+
+                <div class="loading" id="openrouter-loading">
+                    <div class="spinner"></div>
+                    <p>Generating speech with your selected model...</p>
+                </div>
+
+                <div class="error" id="openrouter-error"></div>
+                <div class="result" id="openrouter-result"></div>
+            </div>
+        </div>
+
+        <!-- Speech to Text Section -->
+        <div class="card">
+            <h2>🎙️ Speech to Text</h2>
+
+            <div class="info-box">
+                <p><strong>Convert Audio to Text</strong></p>
+                <p>Upload an audio file to transcribe it to text.</p>
+                <p>Supports: Google Speech Recognition (free) and Whisper (better quality)</p>
+            </div>
+
+            <form id="stt-form">
+                <div class="form-group">
+                    <label for="stt-audio">Audio File:</label>
+                    <input type="file" id="stt-audio" accept="audio/*" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="stt-service">Service:</label>
+                    <select id="stt-service">
+                        <option value="google">Google Speech Recognition (Free)</option>
+                        <option value="whisper">Whisper (Better Quality)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="language-group">
+                    <label for="stt-language">Language (for Google):</label>
+                    <select id="stt-language">
+                        <option value="en-US">English (US)</option>
+                        <option value="es-ES">Spanish</option>
+                        <option value="fr-FR">French</option>
+                        <option value="de-DE">German</option>
+                        <option value="it-IT">Italian</option>
+                        <option value="pt-BR">Portuguese</option>
+                        <option value="zh-CN">Chinese</option>
+                        <option value="ja-JP">Japanese</option>
+                        <option value="ko-KR">Korean</option>
+                    </select>
+                </div>
+
+                <button type="submit">Transcribe Audio</button>
+            </form>
+
+            <div class="loading" id="stt-loading">
+                <div class="spinner"></div>
+                <p>Transcribing audio...</p>
+            </div>
+
+            <div class="error" id="stt-error"></div>
+            <div class="result" id="stt-result"></div>
+        </div>
+
+        <!-- Voice Cloning Studio -->
+        <div class="card">
+            <h2>🎭 Voice Cloning Studio</h2>
+
+            <div class="info-box">
+                <p><strong>Clone ANY Voice with Your Uploaded Sample!</strong></p>
+                <p>1. Upload your voice sample (5-10 seconds of clear speech)</p>
+                <p>2. Enter different texts to hear them in your cloned voice</p>
+                <p>3. FREE - Uses advanced Coqui XTTS model locally</p>
+            </div>
+
+            <!-- Step 1: Upload Voice Sample -->
+            <div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin-top: 0; color: #667eea;">Step 1: Get Your Voice</h3>
+                
+                <div class="tabs" style="margin-bottom: 15px;">
+                    <button class="tab active" onclick="switchUploadTab('upload')" id="tab-upload-btn">📂 Upload File</button>
+                    <button class="tab" onclick="switchUploadTab('record')" id="tab-record-btn">🎙️ Record Voice</button>
+                </div>
+
+                <!-- Option A: Upload File -->
+                <div id="upload-tab-content">
+                    <form id="voice-sample-upload-form">
+                        <div class="form-group">
+                            <label for="voice-sample-file">📂 Your Voice Recording:</label>
+                            <input type="file" id="voice-sample-file" accept="audio/*">
+                            <small style="color: #666;">Record 5-10 seconds of clear speech for best results</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="voice-sample-name">📝 Voice Name:</label>
+                            <input type="text" id="voice-sample-name" placeholder="e.g., My Voice, John's Voice" required>
+                        </div>
+
+                        <button type="submit">📤 Upload Voice Sample</button>
+                    </form>
+                </div>
+
+                <!-- Option B: Record Audio -->
+                <div id="record-tab-content" style="display: none;">
+                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px;">
+                        <p style="margin-bottom: 5px; font-weight: bold; color: #667eea;">📖 Read this text:</p>
+                        <p id="recording-prompt" style="font-style: italic; color: #555; font-size: 1.1em; margin-bottom: 10px;">
+                            "The quick brown fox jumps over the lazy dog. Voice cloning technology is fascinating and powerful."
+                        </p>
+                        <button type="button" onclick="generateRandomPrompt()" style="padding: 5px 10px; font-size: 12px; background: #eee; color: #333;">🔄 New Text</button>
+                    </div>
+
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <button type="button" id="record-btn" onclick="toggleRecording()" style="background: #f44336; border-radius: 50px; width: 60px; height: 60px; font-size: 24px; padding: 0;">🔴</button>
+                        <p id="record-status" style="margin-top: 10px; color: #666;">Click to Start Recording</p>
+                        <audio id="recorded-audio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+                    </div>
+
+                    <form id="voice-record-upload-form">
+                        <div class="form-group">
+                            <label for="voice-record-name">📝 Voice Name:</label>
+                            <input type="text" id="voice-record-name" placeholder="e.g., My Recorded Voice" required>
+                        </div>
+                        <button type="submit" id="upload-recorded-btn" disabled>📤 Upload Recording</button>
+                    </form>
+                </div>
+
+                <div class="loading" id="upload-loading">
+                    <div class="spinner"></div>
+                    <p>Uploading your voice sample...</p>
+                </div>
+
+                <div class="error" id="upload-error"></div>
+                <div class="result" id="upload-result"></div>
+            </div>
+
+            <!-- ... existing Step 2 code ... -->
+
+    <script>
+        // ... existing credentials code ...
+
+        // ========================================
+        // Recording Functions
+        // ========================================
+        // ========================================
+        // Recording Functions
+        // ========================================
+        let recordedBlob;
+
+        const prompts = [
+            "The quick brown fox jumps over the lazy dog. Voice cloning technology is fascinating.",
+            "Technology is best when it brings people together. I love exploring new AI tools.",
+            "To be or not to be, that is the question. Whether 'tis nobler in the mind to suffer.",
+            "I dream of a world where technology helps us create, connect, and understand each other better.",
+            "Life is what happens when you're busy making other plans. Enjoy the moment."
+        ];
+
+        function switchUploadTab(mode) {
+            document.getElementById('upload-tab-content').style.display = mode === 'upload' ? 'block' : 'none';
+            document.getElementById('record-tab-content').style.display = mode === 'record' ? 'block' : 'none';
+            
+            document.getElementById('tab-upload-btn').className = mode === 'upload' ? 'tab active' : 'tab';
+            document.getElementById('tab-record-btn').className = mode === 'record' ? 'tab active' : 'tab';
+        }
+
+        function generateRandomPrompt() {
+            const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+            document.getElementById('recording-prompt').textContent = `"${prompt}"`;
+        }
+
+        // ========================================
+        // WAV Recording Logic (Fix for missing FFMPEG/Baby Voice)
+        // ========================================
+        let recStream;
+        let recInput;
+        let recProcessor;
+        let recContext;
+        let recData = [];
+        let isRecording = false;
+
+        async function toggleRecording() {
+            const recordBtn = document.getElementById('record-btn');
+            const status = document.getElementById('record-status');
+            const audioPlayer = document.getElementById('recorded-audio');
+            
+            if (!isRecording) {
+                // Start Recording
+                try {
+                    recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    // Request 24k sample rate for perfect match with Coqui XTTS
+                    recContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 }); 
+                    recInput = recContext.createMediaStreamSource(recStream);
+                    
+                    // Create ScriptProcessor for raw PCM access
+                    // Buffer size 4096, 1 input channel, 1 output channel
+                    recProcessor = recContext.createScriptProcessor(4096, 1, 1);
+                    
+                    recData = []; // Clear buffer
+                    
+                    recProcessor.onaudioprocess = function(e) {
+                         const input = e.inputBuffer.getChannelData(0);
+                         // Clone data to avoid reference issues
+                         recData.push(new Float32Array(input));
+                    };
+                    
+                    recInput.connect(recProcessor);
+                    recProcessor.connect(recContext.destination); // Required for Chrome to fire events
+
+                    isRecording = true;
+                    recordBtn.style.background = '#cccccc';
+                    recordBtn.textContent = '⬛'; // Stop icon
+                    status.textContent = 'Recording (WAV)... Click to Stop';
+                    status.style.color = '#e91e63';
+                    audioPlayer.style.display = 'none';
+
+                } catch (err) {
+                    alert("Error accessing microphone: " + err.message);
+                    console.error(err);
+                }
+            } else {
+                // Stop Recording
+                isRecording = false;
+                
+                // Disconnect nodes
+                if(recProcessor) {
+                    recProcessor.disconnect();
+                    recInput.disconnect();
+                }
+                
+                if(recStream) {
+                    recStream.getTracks().forEach(track => track.stop());
+                }
+
+                if(recContext && recContext.state !== 'closed') {
+                   recContext.close();
+                }
+
+                // Compile WAV at 22050Hz
+                const wavBlob = exportWAV(recData, 22050);
+                
+                const audioUrl = URL.createObjectURL(wavBlob);
+                audioPlayer.src = audioUrl;
+                audioPlayer.style.display = 'block';
+                document.getElementById('upload-recorded-btn').disabled = false;
+                
+                // Set global blob for upload
+                recordedBlob = wavBlob;
+                
+                recordBtn.style.background = '#e91e63';
+                recordBtn.textContent = '🎙️';
+                status.textContent = 'Recording Stopped. Listener below.';
+                status.style.color = '#666';
+            }
+        }
+        
+        function exportWAV(buffers, sampleRate) {
+            // Flatten buffers
+            const bufferLength = buffers.reduce((acc, buf) => acc + buf.length, 0);
+            const pcmData = new Float32Array(bufferLength);
+            let offset = 0;
+            for (let i = 0; i < buffers.length; i++) {
+                pcmData.set(buffers[i], offset);
+                offset += buffers[i].length;
+            }
+
+            // Create WAV file
+            // 1 channel, 16-bit, sampleRate
+            const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+            const view = new DataView(buffer);
+
+            // RIFF chunk descriptor
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + pcmData.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            
+            // fmt sub-chunk
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, 1, true); // Mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true); // block align
+            view.setUint16(34, 16, true); // bits per sample
+
+            // data sub-chunk
+            writeString(view, 36, 'data');
+            view.setUint32(40, pcmData.length * 2, true);
+
+            // Write PCM samples
+            floatTo16BitPCM(view, 44, pcmData);
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function floatTo16BitPCM(output, offset, input) {
+            for (let i = 0; i < input.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, input[i]));
+                output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        // Upload Recorded Audio
+        document.getElementById('voice-record-upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!recordedBlob) {
+                alert("Please record some audio first!");
+                return;
+            }
+
+            const name = document.getElementById('voice-record-name').value;
+            // Now we are generating a true WAV, so use .wav extension
+            submitVoiceSample(name, recordedBlob, "recording.wav");
+        });
+
+        // Upload File Audio (Original Form) - UPDATED with Client-Side Conversion
+        document.getElementById('voice-sample-upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('voice-sample-file');
+            const file = fileInput.files[0];
+            const name = document.getElementById('voice-sample-name').value;
+            
+            if(!file) {
+                alert("Please select a file.");
+                return;
+            }
+            
+            const loading = document.getElementById('upload-loading');
+            loading.classList.add('show');
+            loading.textContent = "Processing audio (converting to WAV)...";
+
+            try {
+                // Client-side conversion to WAV 22050Hz
+                // This bypasses the need for ffmpeg on the server
+                const arrayBuffer = await file.arrayBuffer();
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 22050 });
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // Extract channel data (mix down to mono if needed)
+                const channelData = audioBuffer.getChannelData(0); // Take first channel (Mono)
+                
+                // Convert to array of Float32Arrays for exportWAV
+                // (exportWAV expects an array of buffers, we just give it one big one)
+                // We need to chunk it if it's too big? exportWAV handles array of buffers.
+                // Actually exportWAV implementation above iterates buffers.
+                // Let's just pass [channelData]
+                
+                
+                const wavBlob = exportWAV([channelData], 22050);
+                
+                // Submit the NEW wav file
+                if(audioContext.state !== 'closed') audioContext.close();
+                
+                loading.textContent = "Uploading converted audio...";
+                await submitVoiceSample(name, wavBlob, "converted_upload.wav");
+                
+            } catch (err) {
+                alert("Error processing audio file: " + err.message + ". Please try a different file.");
+                loading.classList.remove('show');
+            }
+        });
+
+        async function submitVoiceSample(name, fileOrBlob, filename) {
+            const loading = document.getElementById('upload-loading');
+            const error = document.getElementById('upload-error');
+            const result = document.getElementById('upload-result');
+
+            loading.classList.add('show');
+            error.classList.remove('show');
+            result.classList.remove('show');
+
+            try {
+                const formData = new FormData();
+                formData.append('name', name);
+                // Append blob as file
+                formData.append('audio_file', fileOrBlob, filename);
+
+                const response = await fetch('/api/voice-samples/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to upload voice sample');
+                }
+
+                const data = await response.json();
+
+                result.innerHTML = `
+                    <h3 style="color: green;">✅ Voice Sample Uploaded!</h3>
+                    <p><strong>Name:</strong> ${data.name}</p>
+                    <p><strong>ID:</strong> ${data.id}</p>
+                    <p>Now you can use this voice in Step 2 below!</p>
+                `;
+                result.classList.add('show');
+
+                // Clear forms
+                document.getElementById('voice-sample-upload-form').reset();
+                document.getElementById('voice-record-upload-form').reset();
+
+                // Reload voice samples list
+                setTimeout(loadVoiceSamples, 500);
+
+            } catch (err) {
+                error.textContent = err.message;
+                error.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+            }
+        }
+
+        async function deleteSelectedVoice() {
+            const select = document.getElementById('clone-voice-select');
+            const voiceId = select.value;
+
+            if (!voiceId) {
+                alert("Please select a voice to delete.");
+                return;
+            }
+
+            if (!confirm("Are you sure you want to delete this voice sample? This cannot be undone.")) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/voice-samples/${voiceId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                       'Content-Type': 'application/json',
+                        // Add CSRF token if needed, though usually handled by cookies or headers in simple Django setups
+                        'X-CSRFToken': getCookie('csrftoken') 
+                    }
+                });
+
+                if (response.ok) {
+                    alert("✅ Voice sample deleted successfully!");
+                    loadVoiceSamples(); // Refresh list
+                    // Reset selection
+                    select.value = "";
+                } else {
+                    const data = await response.json();
+                    alert("Failed to delete: " + (data.error || response.statusText));
+                }
+            } catch (err) {
+                alert("Error deleting voice: " + err.message);
+            }
+        }
+
+        // Helper to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+
+            <div style="background: #f0fff0; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+
+                <h3 style="margin-top: 0; color: #667eea;">Step 2: Generate Speech in Your Voice</h3>
+                <form id="voice-clone-form">
+                    <div class="form-group">
+                        <label for="clone-voice-select">🎭 Select Uploaded Voice:</label>
+                        <select id="clone-voice-select" required>
+                            <option value="">-- First upload a voice sample above --</option>
+                        </select>
+                        <div style="margin-top: 10px;">
+                            <button type="button" onclick="loadVoiceSamples()" style="padding: 8px 15px; background: #4caf50;">🔄 Refresh Voice List</button>
+                            <button type="button" onclick="deleteSelectedVoice()" style="padding: 8px 15px; background: #f44336; margin-left: 10px;">🗑️ Delete Selected</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="clone-text">📝 Text to Speak in Your Voice:</label>
+                        <textarea id="clone-text" placeholder="Enter any text you want to hear in your cloned voice..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="clone-language">🌍 Language:</label>
+                        <select id="clone-language">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="zh-cn">Chinese</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                        </select>
+                    </div>
+
+                    <button type="submit">🎵 Clone Voice - Generate Speech!</button>
+                </form>
+
+                <div class="loading" id="clone-loading">
+                    <div class="spinner"></div>
+                    <p>Cloning your voice and generating speech... This may take a minute...</p>
+                </div>
+
+                <div class="error" id="clone-error"></div>
+                <div class="result" id="clone-result"></div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+
+            <!-- Step 3: Speech to Text (Bonus) -->
+            <div style="background: #fff0f5; padding: 20px; border-radius: 8px;">
+                <h3 style="margin-top: 0; color: #d81b60;">Step 3: Speech to Text (Bonus)</h3>
+                <p style="color: #666; margin-bottom: 15px;">Convert audio files back into text using OpenAI Whisper or Google Speech.</p>
+                
+                <form id="stt-form">
+                    <!-- Option A: File Upload -->
+                    <div class="form-group">
+                        <label>Option 1: Upload Audio File</label>
+                        <input type="file" id="stt-audio" accept="audio/*">
+                    </div>
+
+                    <!-- Option B: Record Audio -->
+                    <div class="form-group">
+                        <label>Option 2: Record Audio (New!)</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button type="button" id="stt-record-btn" onclick="toggleSTTRecording()" style="background: #e91e63; width: 50px; height: 50px; border-radius: 50%; font-size: 20px; padding: 0;">🎙️</button>
+                            <span id="stt-record-status" style="color: #666;">Click microphone to record</span>
+                        </div>
+                        <audio id="stt-recorded-audio" controls style="display: none; width: 100%; margin-top: 10px;"></audio>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stt-service">🤖 Service:</label>
+                        <select id="stt-service">
+                            <option value="whisper">OpenAI Whisper (Best Quality)</option>
+                            <option value="google">Google Speech Recognition (Free)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="stt-language">🌍 Language (Optional):</label>
+                        <input type="text" id="stt-language" placeholder="e.g. en-US, es, fr (Leave empty to auto-detect)">
+                    </div>
+
+                    <button type="submit" style="background-color: #d81b60;">📝 Transcribe Audio</button>
+                </form>
+
+                <div class="loading" id="stt-loading">
+                    <div class="spinner"></div>
+                    <p>Transcribing audio... Please wait...</p>
+                </div>
+
+                <div class="error" id="stt-error"></div>
+                <div class="result" id="stt-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // Credential Management Functions
+        // ========================================
+
+        // Load saved credentials on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(loadOpenAICredentials, 100);
+            setTimeout(loadOpenRouterCredentials, 100);
+            loadVoiceSamples();
+        });
+
+        // Toggle password visibility
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            if (field.type === 'password') {
+                field.type = 'text';
+            } else {
+                field.type = 'password';
+            }
+        }
+
+        // OpenAI Credentials Management
+        function saveOpenAICredentials(silent = false) {
+            const apiKey = document.getElementById('openai-api-key').value;
+
+            if (!apiKey) {
+                if(!silent) alert('Please enter your OpenAI API key first');
+                return;
+            }
+
+            if (!apiKey.startsWith('sk-')) {
+                if(!silent) alert('Invalid API key format. OpenAI keys start with "sk-"');
+                return;
+            }
+
+            // Save to localStorage
+            localStorage.setItem('openai_api_key', apiKey);
+
+            // Show saved status
+            const status = document.getElementById('openai-saved-status');
+            status.style.display = 'inline';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+
+            if(!silent) alert('✅ OpenAI API key saved successfully!');
+        }
+
+        function loadOpenAICredentials() {
+            try {
+                const savedKey = localStorage.getItem('openai_api_key');
+                console.log("Loading OpenAI Key:", savedKey ? "Found" : "Not Found");
+
+                if (savedKey) {
+                    const input = document.getElementById('openai-api-key');
+                    if(input) {
+                        input.value = savedKey;
+                        const status = document.getElementById('openai-saved-status');
+                        if(status) status.style.display = 'inline';
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading OpenAI credentials:", e);
+            }
+        }
+
+        function deleteOpenAICredentials() {
+            if (confirm('Are you sure you want to delete your saved OpenAI API key?')) {
+                localStorage.removeItem('openai_api_key');
+                document.getElementById('openai-api-key').value = '';
+                document.getElementById('openai-saved-status').style.display = 'none';
+                alert('✅ OpenAI credentials deleted');
+            }
+        }
+
+        // OpenRouter Credentials Management
+        function saveOpenRouterCredentials(silent = false) {
+            const apiKey = document.getElementById('openrouter-api-key').value;
+            const model = document.getElementById('openrouter-model').value;
+
+            if (!apiKey) {
+                if(!silent) alert('Please enter your OpenRouter API key first');
+                return;
+            }
+
+            if (!apiKey.startsWith('sk-or-')) {
+                if(!silent) alert('Invalid API key format. OpenRouter keys start with "sk-or-"');
+                return;
+            }
+
+            // Save to localStorage
+            localStorage.setItem('openrouter_api_key', apiKey);
+            localStorage.setItem('openrouter_model', model);
+
+            // Show saved status
+            const status = document.getElementById('openrouter-saved-status');
+            status.style.display = 'inline';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+
+            if(!silent) alert('✅ OpenRouter credentials saved successfully!');
+        }
+
+        function loadOpenRouterCredentials() {
+            try {
+                const savedKey = localStorage.getItem('openrouter_api_key');
+                const savedModel = localStorage.getItem('openrouter_model');
+                
+                console.log("Loading OpenRouter Config:", savedKey ? "Key Found" : "No Key", savedModel ? "Model Found" : "No Model");
+
+                if (savedKey) {
+                    const input = document.getElementById('openrouter-api-key');
+                    if(input) {
+                        input.value = savedKey;
+                        const status = document.getElementById('openrouter-saved-status');
+                        if(status) status.style.display = 'inline';
+                    }
+                }
+
+                if (savedModel) {
+                    const modelInput = document.getElementById('openrouter-model');
+                    if(modelInput) modelInput.value = savedModel;
+                }
+            } catch (e) {
+                console.error("Error loading OpenRouter credentials:", e);
+            }
+        }
+
+        function deleteOpenRouterCredentials() {
+            if (confirm('Are you sure you want to delete your saved OpenRouter credentials?')) {
+                localStorage.removeItem('openrouter_api_key');
+                localStorage.removeItem('openrouter_model');
+                document.getElementById('openrouter-api-key').value = '';
+                document.getElementById('openrouter-model').value = 'openai/tts-1';
+                document.getElementById('openrouter-saved-status').style.display = 'none';
+                alert('✅ OpenRouter credentials deleted');
+            }
+        }
+
+        // ========================================
+        // Tab switching
+        // ========================================
+        function switchTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tab + '-tab').classList.add('active');
+            // Find button that calls this function with this tab argument
+            const button = document.querySelector(`button[onclick="switchTab('${tab}')"]`);
+            if(button) button.classList.add('active');
+        }
+
+        // Free TTS Form
+        document.getElementById('free-tts-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const text = document.getElementById('free-text').value;
+            const voiceId = document.getElementById('free-voice-id').value;
+            const language = document.getElementById('free-language').value;
+            const voiceSampleFile = document.getElementById('free-voice-sample').files[0];
+
+            const loading = document.getElementById('free-loading');
+            const error = document.getElementById('free-error');
+            const result = document.getElementById('free-result');
+
+            loading.classList.add('show');
+            error.classList.remove('show');
+            result.classList.remove('show');
+
+            try {
+                let voiceSampleId = null;
+
+                // Upload voice sample if provided
+                if (voiceSampleFile) {
+                    const formData = new FormData();
+                    formData.append('name', 'User Voice Sample');
+                    formData.append('audio_file', voiceSampleFile);
+
+                    const uploadResponse = await fetch('/api/voice-samples/', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!uploadResponse.ok) throw new Error('Failed to upload voice sample');
+
+                    const uploadData = await uploadResponse.json();
+                    voiceSampleId = uploadData.id;
+                }
+
+                // Generate speech
+                const response = await fetch('/api/voice-clones/generate_free/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        voice_id: voiceId,
+                        language: language,
+                        voice_sample_id: voiceSampleId
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate speech');
+                }
+
+                const data = await response.json();
+
+                result.innerHTML = `
+                    <h3>✅ Speech Generated!</h3>
+                    <audio controls src="${data.output_file}"></audio>
+                    <p><a href="${data.output_file}" download>Download Audio</a></p>
+                `;
+                result.classList.add('show');
+
+            } catch (err) {
+                error.textContent = err.message;
+                error.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+
+        // OpenAI TTS Form
+        document.getElementById('openai-tts-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Auto-save credentials on submit
+            saveOpenAICredentials(true);
+
+            const apiKey = document.getElementById('openai-api-key').value;
+            const text = document.getElementById('openai-text').value;
+            const voice = document.getElementById('openai-voice').value;
+            const model = document.getElementById('openai-model').value;
+
+            const loading = document.getElementById('openai-loading');
+            const error = document.getElementById('openai-error');
+            const result = document.getElementById('openai-result');
+
+            // Validate API key format
+            if (!apiKey.startsWith('sk-')) {
+                error.textContent = 'Invalid API key format. OpenAI keys start with "sk-"';
+                error.classList.add('show');
+                return;
+            }
+
+            loading.classList.add('show');
+            error.classList.remove('show');
+            result.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/voice-clones/generate_openai/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey,  // Send API key from UI
+                        text: text,
+                        voice_id: voice,
+                        model: model
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate speech');
+                }
+
+                const data = await response.json();
+
+                result.innerHTML = `
+                    <h3>✅ Speech Generated!</h3>
+                    <audio controls src="${data.output_file}"></audio>
+                    <p><a href="${data.output_file}" download>Download Audio</a></p>
+                `;
+                result.classList.add('show');
+
+            } catch (err) {
+                error.textContent = err.message;
+                error.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+
+        // OpenRouter TTS Form
+        document.getElementById('openrouter-tts-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Auto-save credentials on submit
+            saveOpenRouterCredentials(true);
+
+            const apiKey = document.getElementById('openrouter-api-key').value;
+            const text = document.getElementById('openrouter-text').value;
+            const voice = document.getElementById('openrouter-voice').value;
+            const model = document.getElementById('openrouter-model').value;
+
+            const loading = document.getElementById('openrouter-loading');
+            const error = document.getElementById('openrouter-error');
+            const result = document.getElementById('openrouter-result');
+
+            // Validate API key format
+            if (!apiKey.startsWith('sk-or-')) {
+                error.textContent = 'Invalid API key format. OpenRouter keys start with "sk-or-"';
+                error.classList.add('show');
+                return;
+            }
+
+            loading.classList.add('show');
+            error.classList.remove('show');
+            result.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/voice-clones/generate_openrouter/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey,  // Send API key from UI
+                        text: text,
+                        voice_id: voice,
+                        model: model
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate speech');
+                }
+
+                const data = await response.json();
+
+                result.innerHTML = `
+                    <h3>✅ Speech Generated!</h3>
+                    <audio controls src="${data.output_file}"></audio>
+                    <p><a href="${data.output_file}" download>Download Audio</a></p>
+                `;
+                result.classList.add('show');
+
+            } catch (err) {
+                error.textContent = err.message;
+                error.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+
+        // Toggle Password Visibility
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.type = field.type === 'password' ? 'text' : 'password';
+        }
+
+        // ========================================
+        // STT Recording Logic
+        // ========================================
+        let sttMediaRecorder;
+        let sttAudioChunks = [];
+        let sttRecordedBlob;
+        let isSTTRecording = false;
+
+        async function toggleSTTRecording() {
+            const recordBtn = document.getElementById('stt-record-btn');
+            const status = document.getElementById('stt-record-status');
+            const audioPlayer = document.getElementById('stt-recorded-audio');
+            
+            if (!isSTTRecording) {
+                // Start Recording
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    sttMediaRecorder = new MediaRecorder(stream);
+                    sttAudioChunks = [];
+
+                    sttMediaRecorder.ondataavailable = event => {
+                        sttAudioChunks.push(event.data);
+                    };
+
+                    sttMediaRecorder.onstop = () => {
+                        sttRecordedBlob = new Blob(sttAudioChunks, { type: 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(sttRecordedBlob);
+                        audioPlayer.src = audioUrl;
+                        audioPlayer.style.display = 'block';
+                    };
+
+                    sttMediaRecorder.start();
+                    isSTTRecording = true;
+                    recordBtn.style.background = '#cccccc';
+                    recordBtn.textContent = '⬛'; // Stop icon
+                    status.textContent = 'Recording... Click to Stop';
+                    status.style.color = '#e91e63';
+                    status.style.fontWeight = 'bold';
+                    audioPlayer.style.display = 'none';
+
+                } catch (err) {
+                    alert("Error accessing microphone: " + err.message);
+                }
+            } else {
+                // Stop Recording
+                sttMediaRecorder.stop();
+                isSTTRecording = false;
+                recordBtn.style.background = '#e91e63';
+                recordBtn.textContent = '🎙️';
+                status.textContent = 'Recording Stopped. Listener below or click to re-record.';
+                status.style.color = '#666';
+                status.style.fontWeight = 'normal';
+                
+                // Stop tracks
+                sttMediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        // Speech to Text Form Submission
+        document.getElementById('stt-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const audioFile = document.getElementById('stt-audio').files[0];
+            const service = document.getElementById('stt-service').value;
+            const language = document.getElementById('stt-language').value;
+
+            const loading = document.getElementById('stt-loading');
+            const error = document.getElementById('stt-error');
+            const result = document.getElementById('stt-result');
+
+            if (!audioFile && !sttRecordedBlob) {
+                alert("Please upload a file OR record audio first!");
+                return;
+            }
+
+            loading.classList.add('show');
+            error.classList.remove('show');
+            result.classList.remove('show');
+
+            try {
+                const formData = new FormData();
+                
+                if (audioFile) {
+                    formData.append('audio_file', audioFile);
+                } else if (sttRecordedBlob) {
+                    formData.append('audio_file', sttRecordedBlob, "stt_recording.wav");
+                }
+
+                formData.append('language', language);
+                formData.append('use_whisper', service === 'whisper' ? 'true' : 'false');
+
+                const response = await fetch('/api/speech-to-text/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to transcribe audio');
+                }
+
+                const data = await response.json();
+
+                result.innerHTML = `
+                    <h3>✅ Transcription Complete!</h3>
+                    <div style="background: white; padding: 15px; border-radius: 5px; border: 1px solid #ddd; margin-top: 10px;">
+                        <p style="margin-top: 0; color: #666; font-size: 0.9em;">Result:</p>
+                        <p style="font-size: 1.1em; line-height: 1.5;">${data.transcribed_text}</p>
+                    </div>
+                `;
+                result.classList.add('show');
+
+            } catch (err) {
+                error.textContent = err.message;
+                error.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+
+        // Voice Cloning Studio Functions
+
+        // Load voice samples on page load
+        // window.addEventListener('load', loadVoiceSamples); // Use the global DOMContentLoaded listener instead
+
+        async function loadVoiceSamples() {
+            try {
+                const response = await fetch('/api/voice-samples/');
+                const samples = await response.json();
+
+                const select = document.getElementById('clone-voice-select');
+                if(select) {
+                    select.innerHTML = '<option value="">-- Select a voice --</option>';
+
+                    samples.forEach(sample => {
+                        const option = document.createElement('option');
+                        option.value = sample.id;
+                        option.textContent = `${sample.name} (uploaded ${new Date(sample.created_at).toLocaleDateString()})`;
+                        select.appendChild(option);
+                    });
+
+                    if (samples.length > 0) {
+                        const uploadResult = document.getElementById('upload-result');
+                        if(uploadResult) {
+                            uploadResult.innerHTML = `
+                                <p style="color: green;">✅ ${samples.length} voice sample(s) available</p>
+                            `;
+                            uploadResult.classList.add('show');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load voice samples:', err);
+            }
+        }
+
+        // Upload Voice Sample
+        document.getElementById('voice-sample-upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const file = document.getElementById('voice-sample-file').files[0];
+            const name = document.getElementById('voice-sample-name').value;
+
+            const loading = document.getElementById('upload-loading');
+            const error = document.getElementById('upload-error');
+            const result = document.getElementById('upload-result');
+
+            loading.classList.add('show');
+            error.classList.remove('show');
+            result.classList.remove('show');
+
+            try {
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('audio_file', file);
+
+                const response = await fetch('/api/voice-samples/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to upload voice sample');
+                }
+
+                const data = await response.json();
+
+                result.innerHTML = `
+                    <h3 style="color: green;">✅ Voice Sample Uploaded!</h3>
+                    <p><strong>Name:</strong> ${data.name}</p>
+                    <p><strong>ID:</strong> ${data.id}</p>
+                    <p>Now you can use this voice in Step 2 below!</p>
+                `;
+                result.classList.add('show');
+
+                // Clear form
+                document.getElementById('voice-sample-upload-form').reset();
+
+                // Reload voice samples list
+                // Delay slightly to ensure DB update
+                setTimeout(loadVoiceSamples, 500);
+
+            } catch (err) {
+                error.textContent = err.message;
+                error.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+
+        // Clone Voice - Generate Speech
+        document.getElementById('voice-clone-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const voiceId = document.getElementById('clone-voice-select').value;
+            const text = document.getElementById('clone-text').value;
+            const language = document.getElementById('clone-language').value;
+
+            const loading = document.getElementById('clone-loading');
+            const error = document.getElementById('clone-error');
+            const result = document.getElementById('clone-result');
+
+            if (!voiceId) {
+                error.textContent = 'Please select a voice sample first, or upload one in Step 1';
+                error.classList.add('show');
+                return;
+            }
+
+            loading.classList.add('show');
+            error.classList.remove('show');
+            result.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/voice-clones/generate_free/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        language: language,
+                        voice_sample_id: parseInt(voiceId)
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to clone voice');
+                }
+
+                const data = await response.json();
+
+                result.innerHTML = `
+                    <h3 style="color: green;">🎉 Voice Cloned Successfully!</h3>
+                    <p><strong>Your cloned voice is ready:</strong></p>
+                    <audio controls src="${data.output_file}" style="width: 100%; margin: 15px 0;"></audio>
+                    <p><a href="${data.output_file}" download style="color: #667eea; font-weight: bold;">📥 Download Audio</a></p>
+                    <p style="color: #666; font-size: 14px;">Try entering different text above to hear more in your voice!</p>
+                `;
+                result.classList.add('show');
+
+            } catch (err) {
+                error.textContent = err.message;
+                error.classList.add('show');
+            } finally {
+                loading.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

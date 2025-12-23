@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python manage.py makemigrations:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(timeout 10 python:*)",
+      "Bash(if not exist .env copy .env.example .env)",
+      "Bash(if [ -f debug_tts.log ])",
+      "Bash(then tail -50 debug_tts.log)",
+      "Bash(else echo \"No debug log found\")",
+      "Bash(fi)",
+      "mcp__MCP_DOCKER__brave_web_search",
+      "Bash(then tail -100 debug_tts.log)",
+      "Bash(where:*)",
+      "Bash(winget install:*)",
+      "Bash(ffmpeg:*)"
+    ]
+  }
+}
