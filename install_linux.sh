@@ -1,67 +1,28 @@
 #!/bin/bash
+# Voice Studio - Linux installation
+set -e
+cd "$(dirname "$0")"
 
-# Voice Clone Service - Linux Installation Script
-# This script automates the installation process on Linux
-
-set -e  # Exit on error
-
-echo "=================================="
-echo "Voice Clone Service - Linux Setup"
-echo "=================================="
-
-# Check if running on Linux
-if [[ "$OSTYPE" != "linux-gnu"* ]]; then
-    echo "Error: This script is for Linux only"
-    exit 1
-fi
-
-# Check for Python 3
-if ! command -v python3 &> /dev/null; then
-    echo "Error: Python 3 is not installed"
-    echo "Install it with: sudo apt install python3 python3-pip python3-venv"
-    exit 1
-fi
-
-# Check for FFmpeg
 if ! command -v ffmpeg &> /dev/null; then
-    echo "Warning: FFmpeg is not installed"
-    echo "Install it with: sudo apt install ffmpeg"
-    read -p "Continue anyway? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
+    echo "FFmpeg is required. Install it with: sudo apt install ffmpeg"
+    exit 1
 fi
 
-# Create virtual environment
-echo "Creating virtual environment..."
-python3 -m venv venv
+echo "Creating the Python 3.12 environment and installing dependencies."
+echo "This downloads PyTorch (about 2.5 GB), so it can take a while."
+if command -v uv &> /dev/null; then
+    uv venv --python 3.12 .venv
+    uv pip install --python .venv/bin/python -r requirements.txt
+else
+    python3 -m venv .venv
+    .venv/bin/pip install --upgrade pip
+    .venv/bin/pip install -r requirements.txt
+fi
 
-# Activate virtual environment
-echo "Activating virtual environment..."
-source venv/bin/activate
-
-# Upgrade pip
-echo "Upgrading pip..."
-pip install --upgrade pip
-
-# Install dependencies
-echo "Installing Python dependencies..."
-echo "This may take 5-10 minutes (downloading XTTS v2 model ~1.8GB)..."
-pip install -r requirements.txt
-
-# Run migrations
-echo "Running database migrations..."
-python manage.py migrate
+[ -f .env ] || cp .env.example .env
+.venv/bin/python manage.py migrate --noinput
 
 echo ""
-echo "=================================="
-echo "Installation Complete!"
-echo "=================================="
-echo ""
-echo "To start the server:"
-echo "  source venv/bin/activate"
-echo "  python manage.py runserver 0.0.0.0:8000"
-echo ""
-echo "Then open: http://localhost:8000"
-echo ""
+echo "Installed. Start the studio with:  ./run.sh"
+echo "The voice model (1 to 3 GB) downloads the first time you render."
+echo "For the writing assistant, install Ollama and run: ollama pull qwen3:8b"

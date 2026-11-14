@@ -1,18 +1,11 @@
-Django
-djangorestframework
+Django>=6.1,<6.2
 python-dotenv
 requests
-openai
-gTTS
-SpeechRecognition
-pydub
-numpy
 soundfile
-librosa
-python-multipart
-Pillow
-edge-tts
-nest_asyncio
-coqui-tts
-torch
-torchaudio
+num2words
+edge-tts>=7.3
+faster-whisper>=1.2
+# Voice cloning. Pins torch 2.6 (CUDA 12.4), which still supports GTX 10-series cards.
+chatterbox-tts==0.1.7
+# resemble-perth (Chatterbox's watermarker) needs pkg_resources, removed in setuptools 81
+setuptools<81
